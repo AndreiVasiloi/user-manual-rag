@@ -1,0 +1,62 @@
+.user-manual-assistant-container {
+  display: grid;
+  border-radius: 5px;
+  grid-row-gap: 1rem;
+
+  .user-manual-assistant-header {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    grid-column-gap: 1rem;
+    align-items: center;
+    padding-bottom: 16px;
+
+    .user-manual-assistant-header-icon {
+      font-size: 3rem;
+      color: #1469C0;
+    }
+
+    .user-manual-assistant-header-text-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  .user-manual-assistant-upload-container {
+    .user-manual-assistant-upload-field-container {
+      .user-manual-assistant-upload-field {
+        display: grid;
+        grid-template-columns: 1fr max-content;
+        align-items: center;
+        border: 1px solid #C4C6D0;
+        border-radius: 5px;
+
+        input {
+          padding: 0.5rem;
+        }
+
+        button {
+          border: none !important;
+          border-left: 1px solid #C4C6D0 !important;
+          border-radius: 0 !important;
+        }
+      }
+    }
+  }
+
+  .user-manual-assistant-ask-container {
+    display: grid;
+    padding-bottom: 1rem;
+
+    .user-manual-assistant-ask-actions-container {
+      margin-top: 0.5rem;
+      display: grid;
+      grid-row-gap: 0.5rem;
+      justify-content: end;
+    }
+  }
+
+  .user-manual-assistant-answer-container {
+    margin-top: 1rem;
+  }
+}

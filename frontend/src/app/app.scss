@@ -1,0 +1,9 @@
+.app-container {
+  display: grid;
+  grid-template-columns: 1fr 30rem 1fr;
+  padding: 2rem;
+
+  app-user-manuals {
+    grid-column: 2/3;
+  }
+}

@@ -1,0 +1,72 @@
+<div class="user-manual-assistant-container">
+    <mat-card appearance="outlined">
+        <mat-card-header class="user-manual-assistant-header">
+            <div mat-card-avatar class="material-symbols-rounded text-primary user-manual-assistant-header-icon">robot_2</div>
+            <mat-card-title>User Manual Assistant</mat-card-title>
+            <mat-card-subtitle>Ask anything about your uploaded manual</mat-card-subtitle>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+            <!-- Upload -->
+            <section class="user-manual-assistant-upload-container">
+                <h3>Upload PDF</h3>
+                <div class="user-manual-assistant-upload-field-container">
+                    <div class="user-manual-assistant-upload-field">
+                        <input type="file" accept="application/pdf" (change)="onFileSelected($event)"/>
+                        <button mat-stroked-button
+                                matButton="filled"
+                                color="primary"
+                                (click)="onUpload()"
+                                [disabled]="!selectedFile">
+                            <mat-icon>upload</mat-icon>
+                            Upload
+                        </button>
+                    </div>
+                    <p class="text-green">{{ uploadStatus() }}</p>
+                </div>
+            </section>
+        </mat-card-content>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+            <!-- Ask -->
+            <section class="user-manual-assistant-ask-container">
+                <h3>Ask a question</h3>
+                <textarea [formControl]="questionForm"
+                          placeholder="Example: How do I clean the coffee filter?"
+                          rows="5">
+                </textarea>
+                <div class="user-manual-assistant-ask-actions-container">
+                    <button mat-flat-button
+                            matButton="filled"
+                            color="primary"
+                            (click)="onAsk()"
+                            [disabled]="loading || !questionForm.value?.trim()">
+                        <mat-icon>send</mat-icon>
+                        Ask
+                    </button>
+                    @if (loading) {
+                        <mat-progress-spinner
+                                mode="indeterminate"
+                                diameter="28">
+                        </mat-progress-spinner>
+                    }
+                </div>
+            </section>
+        </mat-card-content>
+        @if (answer()) {
+            <mat-divider></mat-divider>
+            <mat-card-content>
+                <section class="user-manual-assistant-answer-container">
+                    <h3>Answer</h3>
+                    <mat-card appearance="outlined">
+                        <mat-card-content>
+                            {{ answer() }}
+                        </mat-card-content>
+                    </mat-card>
+                </section>
+            </mat-card-content>
+        }
+    </mat-card>
+</div>
+
+
