@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from src.qa import ask_question
-from helpers.task_classifier import classify_task  # 🧩 New import
+from helpers.task_classifier import classify_task
 
 router = APIRouter(prefix="/ask", tags=["Ask"])
 
