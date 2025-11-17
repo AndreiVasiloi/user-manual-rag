@@ -16,10 +16,15 @@ frontend/.history/
 # BACKEND (Python)
 # ========================
 /backend/.venv/
+# Python cache directories
 backend/__pycache__/
-backend/*.pyc
+backend/**/__pycache__/
+backend/**/__cache__/
+backend/**/*.pyc
+
 /backend/.env
 /backend/.env.local
+/backend/data_processed
 
 # ========================
 # IDEs and editors

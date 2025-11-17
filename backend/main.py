@@ -1,14 +1,24 @@
-from helpers.chunker import chunk_text
-from routers import ask_router, upload_router
-from src.loader import extract_text_from_pdf
-from src.vector_store import create_vector_store
-from pathlib import Path
+import os
+
+os.environ["TMPDIR"] = "D:/rag_temp"
+os.environ["TEMP"] = "D:/rag_temp"
+os.environ["TMP"] = "D:/rag_temp"
+
+# HuggingFace / SentenceTransformers cache
+os.environ["HF_HOME"] = "D:/rag_temp/hf"
+os.environ["SENTENCE_TRANSFORMERS_HOME"] = "D:/rag_temp/hf"
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
+
+from routers import ask_router, status_router, upload_router
+from src.rag.vector_store import LocalVectorStore
 
 app = FastAPI()
 
-# ✅ Allow requests from Angular frontend
+# CORS for Angular
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:4200"],
@@ -17,25 +27,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Load manual once at startup
-manual_path = Path("data/manuals/user_manual.pdf")
-docs, index, vectors = [], None, None
+# Global vector store (None until a manual is uploaded)
+vector_store = None
 
-if manual_path.exists():
-    text = extract_text_from_pdf(manual_path)
-    docs = chunk_text(text, chunk_size=1000, overlap=200)
-    index, vectors = create_vector_store(docs)
-    print(f"✅ Loaded default manual ({len(docs)} chunks)")
+# Inject shared state into routers
+ask_router.vector_store = None
+upload_router.vector_store = None
 
-# ✅ Share state between routers
-ask_router.docs = upload_router.docs = docs
-ask_router.index = upload_router.index = index
-ask_router.vectors = upload_router.vectors = vectors
+def startup_event():
+    """
+    Optional: auto-load default manual at startup if present.
+    If you prefer to load *only after upload*, comment this block out.
+    """
 
-# ✅ Register routers
+    default_rag_path = Path("data_processed/user_manual/rag_chunks_with_embeddings.json")
+
+    if default_rag_path.exists():
+        global vector_store
+        vector_store = LocalVectorStore(str(default_rag_path))
+
+        # Share store with routers
+        ask_router.vector_store = vector_store
+        upload_router.vector_store = vector_store
+
+        print("✓ Loaded default manual automatically on startup.")
+
+
+# Register routers
 app.include_router(upload_router.router)
 app.include_router(ask_router.router)
+app.include_router(status_router.router)
 
 @app.get("/")
 def root():
-    return {"message": "RAG backend is running 🚀"}
+    return {"message": "RAG backend (icon-aware) is running 🚀"}
