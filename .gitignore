@@ -24,7 +24,15 @@ backend/**/*.pyc
 
 /backend/.env
 /backend/.env.local
-/backend/data_processed
+# Processed ingestion output
+/backend/app/data/processed/
+
+# Uploaded PDF files
+/backend/app/data/uploads/
+
+# Optional: local manual files (if you store examples)
+/backend/app/data/manuals/
+
 
 # ========================
 # IDEs and editors
