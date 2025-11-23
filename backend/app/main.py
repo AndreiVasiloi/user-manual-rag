@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import actual router modules
+from app.api.routers import scrape_router, scrape_search_router
 import app.api.routers.ask_router as ask_router
 import app.api.routers.upload_router as upload_router
 import app.api.routers.status_router as status_router
@@ -74,7 +75,8 @@ app.add_event_handler("startup", startup_event)
 app.include_router(upload_router.router)
 app.include_router(ask_router.router)
 app.include_router(status_router.router)
-
+app.include_router(scrape_router.router)
+app.include_router(scrape_search_router.router)
 
 @app.get("/")
 def root():
