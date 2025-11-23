@@ -36,4 +36,3 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 200))
 # --------------------------------------------
 # Web scrapping settings
 # --------------------------------------------
-FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
