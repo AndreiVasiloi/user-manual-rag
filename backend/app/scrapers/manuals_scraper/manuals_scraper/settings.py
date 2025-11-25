@@ -93,7 +93,10 @@ ITEM_PIPELINES = {
     "manuals_scraper.pipelines.ManualPdfPipeline": 1,
 }
 
-FILES_STORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "downloaded_pdfs")
+# FILES_STORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "downloaded_pdfs")
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FILES_STORE = os.path.join(BASE_DIR, "downloaded_pdfs")
 
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.offsite.OffsiteMiddleware': None,
