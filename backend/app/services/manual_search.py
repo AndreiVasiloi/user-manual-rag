@@ -1,35 +1,62 @@
-import os
 import requests
+import os
 
-def get_serpapi_key():
-    """Always fetch fresh key at call time."""
-    return os.getenv("SERPAPI_KEY")
+SERP_API_KEY = os.getenv("SERPAPI_KEY")
 
-def search_manual_online(model: str) -> str | None:
-    api_key = get_serpapi_key()
+def detect_source(url: str) -> str:
+    url = url.lower()
+    if "manualsonline.com" in url:
+        return "manualsonline"
+    if "manualslib.com" in url:
+        return "manualslib"
+    return "other"
 
-    if not api_key:
-        print("ERROR: SerpAPI key is missing")
-        return None
+def search_manual_online(model: str):
+    if not SERP_API_KEY:
+        print("SerpAPI KEY MISSING")
+        return []
 
-    params = {
-        "engine": "google",
-        "q": f"{model} site:manualsonline.com manual",
-        "num": 5,
-        "api_key": api_key
-    }
+    # Clean model name (optional)
+    model_clean = model.strip()
 
-    resp = requests.get("https://serpapi.com/search", params=params)
+    # Queries focused ONLY on manualsOnLine
+    queries = [
+        f"{model_clean} site:manualsonline.com manual",
+        f"{model_clean} ManualOnline manual",
+        f"{model_clean} user manual manualsonline",
+    ]
 
-    if resp.status_code != 200:
-        print("SerpAPI error:", resp.text)
-        return None
+    results = []
 
-    data = resp.json()
+    for q in queries:
+        params = {
+            "engine": "google",
+            "q": q,
+            "api_key": SERP_API_KEY,
+            "num": 10,
+        }
 
-    for result in data.get("organic_results", []):
-        link = result.get("link", "")
-        if "manualsonline.com" in link:
-            return link
+        resp = requests.get("https://serpapi.com/search", params=params)
 
-    return None
+        if resp.status_code != 200:
+            continue
+
+        data = resp.json()
+
+        for result in data.get("organic_results", []):
+            link = result.get("link", "")
+
+            # ONLY accept manualsonline.com
+            if "manualsonline.com" in link.lower():
+                title = result.get("title", "Unknown")
+                results.append({
+                    "title": title,
+                    "url": link,
+                    "source": "manualsonline"
+                })
+
+        if results:
+            break  # stop after first successful query
+
+    return results
+

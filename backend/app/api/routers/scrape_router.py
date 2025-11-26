@@ -5,82 +5,92 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.services.manual_search import search_manual_online
 from app.ingestion.process_pdf import process_pdf
 from app.rag.vector_store import LocalVectorStore
-import app.api.routers.ask_router as ask_router  # to set global vector_store
+import app.api.routers.ask_router as ask_router  # set active vector store
 
 
 router = APIRouter(prefix="/scrape", tags=["Scraping"])
 
 
 class ScrapeRequest(BaseModel):
-    model: str
+    # URL ales de user din /search/manual
+    url: str
 
 
-def find_scrapy_project_root() -> Path:
+def find_scrapy_root() -> Path:
     """
-    Find the Scrapy project root:
+    Găsește root-ul proiectului Scrapy:
       app/scrapers/manuals_scraper
 
-    Inside it we have:
-      manuals_scraper/     ← Scrapy package (settings.py, spiders, pipelines)
-      downloaded_pdfs/     ← Our FILES_STORE target
+    Înăuntru avem:
+      manuals_scraper/     ← pachetul Scrapy (settings.py, spiders, pipelines)
+      downloaded_pdfs/     ← FILES_STORE (folderul unde se salvează PDF-urile)
     """
     start = Path(__file__).resolve()
     for parent in start.parents:
-        project_root = parent / "scrapers" / "manuals_scraper"
-        settings_file = project_root / "manuals_scraper" / "settings.py"
-        if settings_file.exists():
-            return project_root
+        base = parent / "scrapers" / "manuals_scraper"
+        if (base / "manuals_scraper" / "settings.py").exists():
+            return base
+    raise RuntimeError("Could not locate Scrapy project structure.")
 
-    raise RuntimeError("Could not locate Scrapy project root.")
+
+def choose_spider_for_url(url: str) -> str:
+    """Choose spider based on URL — only manualsonline.com allowed."""
+    lower = url.lower()
+
+    if "manualsonline.com" in lower:
+        return "manualsonline"
+
+    raise HTTPException(
+        status_code=400,
+        detail="Only manuals from manualsonline.com are currently supported.",
+    )
+
 
 
 @router.post("/manual")
 async def scrape_manual(req: ScrapeRequest):
     """
-    Scrape a manual by model name:
-      1. Use SerpAPI to find a Manualsonline URL.
-      2. Run Scrapy spider (manualsonline) on that URL.
-      3. Locate downloaded PDF.
-      4. Ingest PDF via process_pdf.
-      5. Initialize vector store → becomes active manual for /ask.
+    Scrape manual chosen by user:
+    1. Receives a URL from manualsonline.com.
+    2. Runs only the ManualOnline spider.
+    3. Downloads PDF into downloaded_pdfs.
+    4. Runs process_pdf (chunks + embeddings).
+    5. Activates LocalVectorStore for /ask.
     """
-    model = req.model.strip()
-    if not model:
-        raise HTTPException(status_code=400, detail="Model cannot be empty.")
 
-    # 1) Search for the manual online
-    manual_url = search_manual_online(model)
+    manual_url = req.url.strip()
     if not manual_url:
-        raise HTTPException(
-            status_code=404,
-            detail="Could not find any manual online."
-        )
+        raise HTTPException(status_code=400, detail="URL cannot be empty.")
 
-    print(f"[SCRAPE] Found manual URL: {manual_url}")
+    spider_name = choose_spider_for_url(manual_url)
+    print(f"[SCRAPE] Using spider: {spider_name} for URL: {manual_url}")
 
-    # 2) Locate Scrapy project structure
-    scrapy_project_root = find_scrapy_project_root()
-    scrapy_cwd = scrapy_project_root / "manuals_scraper"   # where settings.py is
+
+    # 2) Find Scrapy project structure
+    scrapy_project_root = find_scrapy_root()
+    scrapy_cwd = scrapy_project_root / "manuals_scraper"   # aici e settings.py
     downloads_folder = scrapy_project_root / "downloaded_pdfs"
 
     downloads_folder.mkdir(parents=True, exist_ok=True)
 
-    print(f"[SCRAPE] Scrapy root: {scrapy_cwd}")
+    print(f"[SCRAPE] Scrapy root (cwd): {scrapy_cwd}")
     print(f"[SCRAPE] Downloads folder: {downloads_folder}")
 
     # 3) Clear old PDFs
     for f in downloads_folder.glob("*.pdf"):
-        f.unlink()
+        try:
+            f.unlink()
+        except Exception as e:
+            print(f"[SCRAPE] Could not delete {f}: {e}")
 
-    # 4) Run Scrapy spider
+    # 4) Run Scrapy spider cu start_url = manual_url
     result = subprocess.run(
         [
             "scrapy",
             "crawl",
-            "manualsonline",
+            spider_name,
             "-a",
             f"start_url={manual_url}",
         ],
@@ -109,19 +119,39 @@ async def scrape_manual(req: ScrapeRequest):
     latest_pdf = pdf_files[-1]
     print(f"[SCRAPE] Using downloaded PDF: {latest_pdf}")
 
-    # 6) Ingest PDF → get RAG JSON path
-    rag_json_path = process_pdf(
+
+    # Validate it's actually a PDF
+    if not latest_pdf.suffix.lower() == ".pdf":
+        raise HTTPException(
+            status_code=500,
+            detail="Downloaded file is not a valid PDF. ManualsLib often blocks direct PDF access."
+        )
+
+    # 6) Ingest PDF → întoarce directorul cu datele RAG
+    rag_dir = process_pdf(
         str(latest_pdf),
-        metadata={"model": model, "source_url": manual_url},
+        metadata={"source_url": manual_url},
     )
 
-    # 7) Initialize vector store and set as active
-    vs = LocalVectorStore(rag_json_path)
+    # 7) Initialize vector store and set as active pentru /ask
+    from pathlib import Path
+
+    rag_json_path = Path(rag_dir) / "rag_chunks_with_embeddings.json"
+
+    if not rag_json_path.exists():
+        raise HTTPException(
+            status_code=500,
+            detail=f"RAG JSON not found: {rag_json_path}"
+        )
+
+    vs = LocalVectorStore(str(rag_json_path))
+
     ask_router.vector_store = vs
 
     return {
         "message": "Manual scraped, downloaded, and processed successfully.",
         "scraped_url": manual_url,
         "pdf": latest_pdf.name,
-        "rag_json": rag_json_path,
+        "rag_dir": rag_dir,
+        "spider": spider_name,
     }

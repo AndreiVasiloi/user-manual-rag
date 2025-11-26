@@ -52,17 +52,15 @@ def process_pdf(
     # Run your full ingestion pipeline
     run_full_ingestion(str(pdf_path_p), str(output_dir))
 
-    # Find resulting JSON file(s)
-    json_candidates = list(output_dir.glob("*.json"))
-    if not json_candidates:
+    # The ingestion pipeline always places RAG chunks here:
+    rag_json = output_dir / "rag_chunks_with_embeddings.json"
+
+    if not rag_json.exists():
         raise FileNotFoundError(
-            f"No JSON embeddings found inside {output_dir}. "
-            f"Expected run_full_ingestion() to generate at least one .json file."
+            f"RAG embedding file not found: {rag_json}. "
+            f"run_full_ingestion() must generate rag_chunks_with_embeddings.json"
         )
 
-    # If multiple JSONs exist, pick the largest one
-    rag_json = max(json_candidates, key=lambda f: f.stat().st_size)
+    logger.info(f"[process_pdf] Returning output directory: {output_dir}")
+    return str(output_dir)
 
-    logger.info(f"[process_pdf] Returning RAG JSON: {rag_json}")
-
-    return str(rag_json)
