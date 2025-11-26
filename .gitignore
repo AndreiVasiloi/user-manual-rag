@@ -29,8 +29,9 @@ backend/**/*.pyc
 
 # Uploaded PDF files
 /backend/app/data/uploads/
+/backend/app/scrapers/manuals_scraper/downloaded_pdfs
 
-# Optional: local manual files (if you store examples)
+# Optional: local manual files
 /backend/app/data/manuals/
 
 

@@ -16,14 +16,11 @@ def search_manual_online(model: str):
         print("SerpAPI KEY MISSING")
         return []
 
-    # Clean model name (optional)
-    model_clean = model.strip()
-
-    # Queries focused ONLY on manualsOnLine
     queries = [
-        f"{model_clean} site:manualsonline.com manual",
-        f"{model_clean} ManualOnline manual",
-        f"{model_clean} user manual manualsonline",
+        f"{model} filetype:pdf manual",
+        f"{model} pdf user manual",
+        f"{model} download manual pdf",
+        f"{model} instruction manual pdf",
     ]
 
     results = []
@@ -44,19 +41,19 @@ def search_manual_online(model: str):
         data = resp.json()
 
         for result in data.get("organic_results", []):
-            link = result.get("link", "")
+            link = result.get("link", "").lower()
 
-            # ONLY accept manualsonline.com
-            if "manualsonline.com" in link.lower():
-                title = result.get("title", "Unknown")
+            if link.endswith(".pdf"):
+                title = result.get("title", "PDF manual")
                 results.append({
                     "title": title,
                     "url": link,
-                    "source": "manualsonline"
+                    "source": "pdf"
                 })
 
         if results:
-            break  # stop after first successful query
+            break
 
     return results
+
 
