@@ -1,7 +1,9 @@
 <div class="user-manual-assistant-container">
     <mat-card appearance="outlined">
         <mat-card-header class="user-manual-assistant-header">
-            <div mat-card-avatar class="material-symbols-rounded text-primary user-manual-assistant-header-icon">robot_2</div>
+            <div mat-card-avatar class="material-symbols-rounded text-primary user-manual-assistant-header-icon">
+                robot_2
+            </div>
             <mat-card-title>User Manual Assistant</mat-card-title>
             <mat-card-subtitle>Ask anything about your uploaded manual</mat-card-subtitle>
         </mat-card-header>
@@ -26,6 +28,62 @@
                 </div>
             </section>
         </mat-card-content>
+        <div class="user-manual-assistant-upload-or-search-divider-container">
+            <mat-divider class="user-manual-assistant-upload-or-search-divider"></mat-divider>
+            <span class="user-manual-assistant-upload-or-search-divider-text">or</span>
+        </div>
+        <mat-card-content>
+            <section class="user-manual-assistant-search-container">
+                <h3>Search for a manual</h3>
+                <div class="user-manual-assistant-search-field-container">
+                    <input type="text" placeholder="Search" [formControl]="searchForm">
+                    @if (userManuals().length > 0) {
+                        <select name="user manuals" [formControl]="selectedManualForm">
+                            <option [value]="null">Choose your manual</option>
+                            @for (userManual of userManuals(); track $index) {
+                                <option [ngValue]="userManual">{{ userManual.title }}</option>
+                            }
+                        </select>
+                    }
+                    <div class="user-manual-assistant-search-actions-container">
+                        <div class="action-button-container">
+                            <button mat-flat-button
+                                    matButton="filled"
+                                    color="primary"
+                                    class="action-button"
+                                    (click)="onScrapeManual()"
+                                    [disabled]="scrapeSpinner() || !selectedManualForm.value">
+                                <mat-icon>search</mat-icon>
+                                Scrape
+                            </button>
+                            @if (scrapeSpinner()) {
+                                <mat-progress-spinner class="action-button-spinner"
+                                                      mode="indeterminate"
+                                                      diameter="28">
+                                </mat-progress-spinner>
+                            }
+                        </div>
+                        <div class="action-button-container">
+                            <button mat-flat-button
+                                    matButton="filled"
+                                    color="primary"
+                                    class="action-button"
+                                    (click)="onSearchManual()"
+                                    [disabled]="searchSpinner() || !searchForm.value?.trim()">
+                                <mat-icon>search</mat-icon>
+                                Search
+                            </button>
+                            @if (searchSpinner()) {
+                                <mat-progress-spinner class="action-button-spinner"
+                                                      mode="indeterminate"
+                                                      diameter="28">
+                                </mat-progress-spinner>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </mat-card-content>
         <mat-divider></mat-divider>
         <mat-card-content>
             <!-- Ask -->
@@ -40,11 +98,11 @@
                             matButton="filled"
                             color="primary"
                             (click)="onAsk()"
-                            [disabled]="loading || !questionForm.value?.trim()">
+                            [disabled]="askSpinner() || !questionForm.value?.trim()">
                         <mat-icon>send</mat-icon>
                         Ask
                     </button>
-                    @if (loading) {
+                    @if (askSpinner()) {
                         <mat-progress-spinner
                                 mode="indeterminate"
                                 diameter="28">

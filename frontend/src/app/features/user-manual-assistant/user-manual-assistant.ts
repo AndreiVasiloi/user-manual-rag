@@ -13,7 +13,6 @@ import {MatButton} from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import { faRobot } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
     selector: 'app-user-manuals',
@@ -36,34 +35,71 @@ import { faRobot } from '@fortawesome/free-solid-svg-icons';
 })
 export class UserManualAssistant implements OnInit {
     questionForm = new FormControl();
+    searchForm = new FormControl();
+    selectedManualForm = new FormControl();
     answer: WritableSignal<string> = signal('');
-    loading = false;
+    searchSpinner: WritableSignal<boolean> = signal(false);
+    askSpinner: WritableSignal<boolean> = signal(false);
+    scrapeSpinner: WritableSignal<boolean> = signal(false);
     uploadStatus: WritableSignal<string> = signal('');
+    userManuals: WritableSignal<{title: string, url: string, source: string}[]> = signal([]);
     selectedFile?: File;
 
     constructor(private askService: AskService) {
     }
 
     ngOnInit() {
-        this.questionForm.valueChanges.subscribe(res => console.log(res));
+    }
+
+    onSearchManual() {
+        this.searchSpinner.set(true);
+        this.askService.searchManual(this.searchForm.value).subscribe({
+            next: (res: any) => {
+                console.log(res);
+                this.userManuals.set(res.results);
+                this.searchSpinner.set(false);
+            },
+            error: (err) => {
+                console.error('Error:', err);
+                this.searchSpinner.set(false);
+            },
+        });
+    }
+
+    onScrapeManual() {
+        this.scrapeSpinner.set(true);
+        console.log(this.selectedManualForm.value);
+        this.uploadStatus.set('Uploading...');
+        this.askService.scrapeManual(this.selectedManualForm.value.url).subscribe({
+            next: (res: any) => {
+                console.log(res);
+                this.uploadStatus.set(`✅`);
+                this.userManuals.set(res.results);
+                this.scrapeSpinner.set(false);
+            },
+            error: (err) => {
+                console.error('Error:', err);
+                this.scrapeSpinner.set(false);
+                this.uploadStatus.set('❌ Upload failed.');
+            },
+        });
     }
 
     onAsk() {
-        this.loading = true;
+        this.askSpinner.set(true);
         this.askService.askQuestion(this.questionForm.value).subscribe({
             next: (res) => {
                 this.answer.set(res.answer);
                 console.log(this.answer);
 
-                this.loading = false;
+                this.askSpinner.set(false);
             },
             error: (err) => {
                 console.error('Error:', err);
-                this.loading = false;
+                this.askSpinner.set(false);
             },
         });
     }
-
 
     onFileSelected(event: Event) {
         const input = event.target as HTMLInputElement;
@@ -91,6 +127,4 @@ export class UserManualAssistant implements OnInit {
             },
         });
     }
-
-    protected readonly faRobot = faRobot;
 }
