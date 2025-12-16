@@ -1,4 +1,4 @@
-<div class="user-manual-assistant-container">
+<div class="user-manual-assistant-container" [ngStyle]="{'grid-template-columns': userManuals().length > 0 && selectedManualForm.value?.url ? '1fr 1fr' : '1fr'}">
     <mat-card appearance="outlined">
         <mat-card-header class="user-manual-assistant-header">
             <div mat-card-avatar class="material-symbols-rounded text-primary user-manual-assistant-header-icon">
@@ -63,6 +63,7 @@
                                 </mat-progress-spinner>
                             }
                         </div>
+                        <p class="text-green">{{ scrapeStatus() }}</p>
                         <div class="action-button-container">
                             <button mat-flat-button
                                     matButton="filled"
@@ -125,6 +126,13 @@
             </mat-card-content>
         }
     </mat-card>
+    @if (userManuals().length > 0 && selectedManualForm.value?.url) {
+        <pdf-viewer [src]="selectedManualForm.value.url"
+                    [render-text]="true"
+                    [original-size]="false"
+                    style="height: 100%">
+        </pdf-viewer>
+    }
 </div>
 
 

@@ -20,6 +20,7 @@
     "@angular/router": "^20.0.0",
     "@fortawesome/angular-fontawesome": "^3.0.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "ng2-pdf-viewer": "^10.4.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

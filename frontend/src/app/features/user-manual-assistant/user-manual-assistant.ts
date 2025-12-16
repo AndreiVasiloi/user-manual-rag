@@ -13,6 +13,8 @@ import {MatButton} from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
+import {PdfViewerModule} from 'ng2-pdf-viewer';
+import {NgStyle} from '@angular/common';
 
 @Component({
     selector: 'app-user-manuals',
@@ -28,7 +30,9 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
         MatCardContent,
         MatButton,
         MatIconModule,
-        FontAwesomeModule
+        FontAwesomeModule,
+        PdfViewerModule,
+        NgStyle
     ],
     templateUrl: './user-manual-assistant.html',
     styleUrl: './user-manual-assistant.scss',
@@ -42,6 +46,7 @@ export class UserManualAssistant implements OnInit {
     askSpinner: WritableSignal<boolean> = signal(false);
     scrapeSpinner: WritableSignal<boolean> = signal(false);
     uploadStatus: WritableSignal<string> = signal('');
+    scrapeStatus: WritableSignal<string> = signal('');
     userManuals: WritableSignal<{title: string, url: string, source: string}[]> = signal([]);
     selectedFile?: File;
 
@@ -68,19 +73,18 @@ export class UserManualAssistant implements OnInit {
 
     onScrapeManual() {
         this.scrapeSpinner.set(true);
-        console.log(this.selectedManualForm.value);
-        this.uploadStatus.set('Uploading...');
+        this.scrapeStatus.set('Scraping...');
         this.askService.scrapeManual(this.selectedManualForm.value.url).subscribe({
             next: (res: any) => {
                 console.log(res);
-                this.uploadStatus.set(`✅`);
+                this.scrapeStatus.set(`✅`);
                 this.userManuals.set(res.results);
                 this.scrapeSpinner.set(false);
             },
             error: (err) => {
                 console.error('Error:', err);
                 this.scrapeSpinner.set(false);
-                this.uploadStatus.set('❌ Upload failed.');
+                this.scrapeStatus.set('❌ Scraping failed.');
             },
         });
     }
